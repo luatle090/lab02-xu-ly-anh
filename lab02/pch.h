@@ -11,4 +11,12 @@
 
 // TODO: add headers that you want to pre-compile here
 
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui/highgui.hpp"
+using namespace cv;
+
+#include <string>
+using namespace std;
+
+
 #endif //PCH_H
