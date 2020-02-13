@@ -1,10 +1,9 @@
 ﻿#pragma once
+#include "pch.h"
+
 /*
  Lớp base dùng để nội suy màu của 1 pixel
 */
-
-#include "pch.h"
-
 class PixelInterpolate
 {
 public:
@@ -52,6 +51,27 @@ Lớp biểu diễn pháp biến đổi affine
 class AffineTransform
 {
 	Mat _matrixTransform;//ma trận 3x3 biểu diễn phép biến đổi affine
+
+	/*
+		Nhân 2 ma trận
+	*/
+	Mat multipleMatrix(Mat matrix1, Mat matrix2);
+
+	/*
+		Xây dựng ma trận translate
+	*/
+	Mat buildTranslate(float dx, float dy);
+
+	/*
+		Xây dựng ma trận scale
+	*/
+	Mat buildScale(float sx, float sy);
+
+	/*
+		Xây dựng ma trận rotate
+	*/
+	Mat buildRotate(float angle);
+
 public:
 	void Translate(float dx, float dy);// xây dựng matrix transform cho phép tịnh tiến theo vector (dx,dy)
 	void Rotate(float angle);//xây dựng matrix transform cho phép xoay 1 góc angle
