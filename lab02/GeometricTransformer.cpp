@@ -96,8 +96,8 @@ void AffineTransform::Scale(float sx, float sy)
 void AffineTransform::TransformPoint(float & x, float & y)
 {
 	//vector nhân ma trận
-	x = x * _matrixTransform.at<float>(0, 0) + x * _matrixTransform.at<float>(0,1) + _matrixTransform.at<float>(0, 2);
-	y = y * _matrixTransform.at<float>(0, 0) + y * _matrixTransform.at<float>(1, 1) + _matrixTransform.at<float>(1, 2);
+	x = x * _matrixTransform.at<float>(0, 0) + x * _matrixTransform.at<float>(0, 1) + _matrixTransform.at<float>(0, 2);
+	y = y * _matrixTransform.at<float>(1, 0) + y * _matrixTransform.at<float>(1, 1) + _matrixTransform.at<float>(1, 2);
 }
 
 AffineTransform::AffineTransform()
@@ -109,11 +109,43 @@ AffineTransform::~AffineTransform()
 {
 }
 
-uchar NearestNeighborInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
+
+uchar* NearestNeighborInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
+{
+	uchar result = 0;
+	int cols = tx;
+	int rows = ty;
+	pSrc = pSrc + rows * srcWidthStep + cols * nChannels;
+
+	//if (tx - (int)tx == 0 && ty - (int)ty == 0)
+	//{
+	//	result = pSrc[0];
+	//}
+
+	return pSrc;
+}
+
+NearestNeighborInterpolate::NearestNeighborInterpolate()
+{
+}
+
+NearestNeighborInterpolate::~NearestNeighborInterpolate()
+{
+}
+
+
+uchar *BilinearInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
 {
 	return uchar();
 }
 
+BilinearInterpolate::BilinearInterpolate()
+{
+}
+
+BilinearInterpolate::~BilinearInterpolate()
+{
+}
 
 
 int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, AffineTransform * transformer, PixelInterpolate * interpolator)
@@ -122,14 +154,68 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 	if (beforeImage.cols <= 0 || beforeImage.rows <= 0 || beforeImage.data == NULL)
 		return 0;
 
-	float x, y;
-	transformer->TransformPoint(x, y);
-	//interpolator->Interpolate();
+	int rows = afterImage.rows;
+	int cols = afterImage.cols;
 
+	int srcWidthStep = beforeImage.step[0];
+	int srcChannels = beforeImage.step[1];
 
+	int dstWidthStep = afterImage.step[0];
+	int dstChannels = afterImage.step[1];
 
+	uchar* pDstData = (uchar*)afterImage.data;
+	uchar* pSrc = (uchar*)beforeImage.data;
 
-	
+	for (int row = 0; row < rows; row++, pDstData += dstWidthStep)
+	{
+		uchar* pRow = pDstData;
+		for (int col = 0; col < cols; col++, pRow += dstChannels)
+		{
+			float x = col, y = row;
+			transformer->TransformPoint(x, y);
 
+			//nếu x, y là điểm pixel trong ảnh gốc thì giá trị là nó
+			//ngược lại thì giá trị sẽ đc nội suy
+			uchar* p = interpolator->Interpolate(x, y, pSrc, srcWidthStep, srcChannels);
+			
+			
+			pRow[0] = p[0];
+			pRow[1] = p[1];
+			pRow[2] = p[2];
+		}
+	}
 	return 1;
+}
+
+int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, float sy, PixelInterpolate * interpolator)
+{
+	
+	int width = srcImage.cols;
+	int height = srcImage.rows;
+
+	dstImage = Mat(height * sx, width * sy, CV_8UC3, Scalar(0));
+
+	AffineTransform affine;
+	affine.Scale(1.0/sx, 1.0/sy);
+
+	Transform(srcImage, dstImage, &affine, interpolator);
+	return 1;
+}
+
+GeometricTransformer::GeometricTransformer()
+{
+}
+
+GeometricTransformer::~GeometricTransformer()
+{
+}
+
+
+
+PixelInterpolate::PixelInterpolate()
+{
+}
+
+PixelInterpolate::~PixelInterpolate()
+{
 }

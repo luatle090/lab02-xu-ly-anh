@@ -1,4 +1,4 @@
-
+﻿
 #include "pch.h"
 #include "GeometricTransformer.h"
 
@@ -78,5 +78,32 @@ int main(int argc, char* argv[])
 		printf("Errors");
 	}*/
 
+
+
+	Mat sourceImage = imread("E:\\Histogram_Calculation.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat dstImage;
+	GeometricTransformer geo;
+	PixelInterpolate *pixel;
+	NearestNeighborInterpolate noiSuy;
+	pixel = &noiSuy;
+	geo.Scale(sourceImage, dstImage, 2, 2, pixel);
+
+	//for (int y = 0; y < sourceImage.rows; y++)
+	//{
+	//	uchar* pRow = sourceImage.ptr<uchar>(y);
+	//	for (int x = 0; x < sourceImage.cols; x++, pRow += sourceImage.channels())
+	//	{
+	//		uchar s = sourceImage.at<uchar>(y, x);//truy xuất pixel (x,y)
+	//		uchar c =pRow[0];
+	//		//pRow[1];
+	//		//pRow[2];
+	//		float sum = 0;
+	//	}
+	//}
+
+
+	cv::imshow("Source Image", sourceImage);
+	cv::imshow("Destination Image", dstImage);
+	waitKey(0);
 	return result;
 }
