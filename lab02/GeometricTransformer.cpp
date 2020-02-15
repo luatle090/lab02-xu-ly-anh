@@ -112,6 +112,7 @@ AffineTransform::~AffineTransform()
 
 uchar* NearestNeighborInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
 {
+	
 	uchar result = 0;
 	int cols = tx;
 	int rows = ty;
@@ -193,7 +194,7 @@ int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, 
 	int width = srcImage.cols;
 	int height = srcImage.rows;
 
-	dstImage = Mat(height, width, CV_8UC3, Scalar(0));
+	dstImage = Mat(height * sy, width * sx, CV_8UC3, Scalar(0));
 
 	AffineTransform affine;
 	affine.Scale(1.0/sx, 1.0/sy);
