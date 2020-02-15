@@ -151,7 +151,7 @@ BilinearInterpolate::~BilinearInterpolate()
 int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, AffineTransform * transformer, PixelInterpolate * interpolator)
 {
 	
-	if (beforeImage.cols <= 0 || beforeImage.rows <= 0 || beforeImage.data == NULL)
+	if (afterImage.cols <= 0 || afterImage.rows <= 0 || afterImage.data == NULL)
 		return 0;
 
 	int rows = afterImage.rows;
@@ -189,17 +189,39 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 
 int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, float sy, PixelInterpolate * interpolator)
 {
-	
+	int result = 0;
 	int width = srcImage.cols;
 	int height = srcImage.rows;
 
-	dstImage = Mat(height * sx, width * sy, CV_8UC3, Scalar(0));
+	dstImage = Mat(height, width, CV_8UC3, Scalar(0));
 
 	AffineTransform affine;
 	affine.Scale(1.0/sx, 1.0/sy);
 
-	Transform(srcImage, dstImage, &affine, interpolator);
-	return 1;
+	result = Transform(srcImage, dstImage, &affine, interpolator);
+	return result;
+}
+
+int GeometricTransformer::Resize(const Mat & srcImage, Mat & dstImage, int newWidth, int newHeight, PixelInterpolate * interpolator)
+{
+	int result = 0;
+
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+		return 0;
+
+	int width = srcImage.cols;
+	int height = srcImage.rows;
+
+	dstImage = Mat(newHeight, newWidth, CV_8UC3, Scalar(0));
+
+	float x = 1.0 / (1.0 * newWidth / width);
+	float y = 1.0 / (1.0 * newHeight / height);
+
+	AffineTransform affine;
+	affine.Scale(x, y);
+
+	result = Transform(srcImage, dstImage, &affine, interpolator);
+	return result;
 }
 
 GeometricTransformer::GeometricTransformer()
