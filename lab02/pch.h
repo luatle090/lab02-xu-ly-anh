@@ -15,8 +15,10 @@
 #include "opencv2/highgui/highgui.hpp"
 using namespace cv;
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+//#include <cmath>
 #include <string>
-#include <cmath>
 using namespace std;
 
 
