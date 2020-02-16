@@ -1,5 +1,5 @@
 ﻿#include "GeometricTransformer.h"
-
+#include "pch.h"
 
 Mat AffineTransform::multipleMatrix(Mat matrix1, Mat matrix2)
 {
@@ -16,11 +16,13 @@ Mat AffineTransform::multipleMatrix(Mat matrix1, Mat matrix2)
 			float* pRowMatrix1 = matrix1.ptr<float>(row);
 			float* pRowMatrix2 = matrix2.ptr<float>(0) + col;
 
-			for (int k = 0; k < matrix1.cols; pRowMatrix1 += nChannel, pRowMatrix2 += widthStep)
+			for (int k = 0; k < matrix1.cols; k++, pRowMatrix1 += nChannel, pRowMatrix2 += widthStep)
 			{
 				pRowResult[0] += pRowMatrix1[0] * pRowMatrix2[0];
 			}
+			printf("%f ", pRowResult[0]);
 		}
+		printf("\n");
 	}
 	return result;
 }
@@ -31,6 +33,8 @@ Mat AffineTransform::buildTranslate(float dx, float dy)
 	matrix.at<float>(0, 0) = 1;
 	matrix.at<float>(1, 1) = 1;
 	matrix.at<float>(2, 2) = 1;
+	matrix.at<float>(0, 2) = dx;
+	matrix.at<float>(1, 2) = dy;
 	return matrix;
 }
 
@@ -45,12 +49,13 @@ Mat AffineTransform::buildScale(float sx, float sy)
 
 Mat AffineTransform::buildRotate(float angle)
 {
+	float deg = M_PI / 180.0;
 	Mat matrix = Mat(3, 3, CV_32FC1, Scalar(0));
 	matrix.at<float>(2, 2) = 1;
-	matrix.at<float>(0, 0) = cos(angle);
-	matrix.at<float>(0, 1) = -sin(angle);
-	matrix.at<float>(1, 0) = sin(angle);
-	matrix.at<float>(1, 1) = cos(angle);
+	matrix.at<float>(0, 0) = cos(angle * deg);
+	matrix.at<float>(0, 1) = -sin(angle * deg);
+	matrix.at<float>(1, 0) = sin(angle * deg);
+	matrix.at<float>(1, 1) = cos(angle * deg);
 	return matrix;
 }
 
@@ -96,8 +101,11 @@ void AffineTransform::Scale(float sx, float sy)
 void AffineTransform::TransformPoint(float & x, float & y)
 {
 	//vector nhân ma trận
-	x = x * _matrixTransform.at<float>(0, 0) + x * _matrixTransform.at<float>(0, 1) + _matrixTransform.at<float>(0, 2);
-	y = y * _matrixTransform.at<float>(1, 0) + y * _matrixTransform.at<float>(1, 1) + _matrixTransform.at<float>(1, 2);
+	float tempX = x, tempY = y;
+	x = tempX * _matrixTransform.at<float>(0, 0) + tempY * _matrixTransform.at<float>(0, 1) + _matrixTransform.at<float>(0, 2);
+	y = tempX * _matrixTransform.at<float>(1, 0) + tempY * _matrixTransform.at<float>(1, 1) + _matrixTransform.at<float>(1, 2);
+
+
 }
 
 AffineTransform::AffineTransform()
@@ -122,7 +130,7 @@ uchar* NearestNeighborInterpolate::Interpolate(float tx, float ty, uchar * pSrc,
 	//{
 	//	result = pSrc[0];
 	//}
-
+	
 	return pSrc;
 }
 
@@ -135,7 +143,7 @@ NearestNeighborInterpolate::~NearestNeighborInterpolate()
 }
 
 
-uchar *BilinearInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
+uchar* BilinearInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
 {
 	return uchar();
 }
@@ -166,7 +174,7 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 
 	uchar* pDstData = (uchar*)afterImage.data;
 	uchar* pSrc = (uchar*)beforeImage.data;
-
+	uchar* p;
 	for (int row = 0; row < rows; row++, pDstData += dstWidthStep)
 	{
 		uchar* pRow = pDstData;
@@ -174,18 +182,57 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 		{
 			float x = col, y = row;
 			transformer->TransformPoint(x, y);
+			
+			if (x < 0 || x >= beforeImage.cols || y < 0 || y >= beforeImage.rows)
+			{
+				pRow[0] = 0;
+				pRow[1] = 0;
+				pRow[2] = 0;
+			}
+			else
+			{
+				//nếu x, y là điểm pixel trong ảnh gốc thì giá trị là nó
+				//ngược lại thì giá trị sẽ đc nội suy
+				p = interpolator->Interpolate(x, y, pSrc, srcWidthStep, srcChannels);
 
-			//nếu x, y là điểm pixel trong ảnh gốc thì giá trị là nó
-			//ngược lại thì giá trị sẽ đc nội suy
-			uchar* p = interpolator->Interpolate(x, y, pSrc, srcWidthStep, srcChannels);
-			
-			
-			pRow[0] = p[0];
-			pRow[1] = p[1];
-			pRow[2] = p[2];
+
+				pRow[0] = p[0];
+				pRow[1] = p[1];
+				pRow[2] = p[2];
+			}	
 		}
 	}
 	return 1;
+}
+
+int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
+{
+	int result = 0;
+	float deg = M_PI / 180.0;
+	float angleNguoc = 180 - abs(angle) - 90;
+	float dy = srcImage.cols * cos(abs(angleNguoc) * deg);
+	float dx = dy * tan(abs(angle) * deg);
+
+	//lấy affine ngược
+	AffineTransform affine;
+	affine.Translate(dx, -dy);
+	affine.Rotate(-angle);
+
+	//tìm full rows và full cols;
+	//tìm góc đối
+	float angle_2 = 90 - abs(angleNguoc);
+
+	//tìm góc new width
+	float angle_3 = 180 - 90 - angle_2;
+	int newCols = dx + srcImage.rows * cos(angle_3 * deg);
+
+	//tìm new height
+	float angle_4 = 180 - 90 - abs(angleNguoc);
+	int newRows = dy + srcImage.rows * cos(angle_4 * deg);
+
+	dstImage = Mat(newRows + 1, newCols + 1, CV_8UC3, Scalar(0));
+	result = Transform(srcImage, dstImage, &affine, interpolator);
+	return result;
 }
 
 int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, float sy, PixelInterpolate * interpolator)
@@ -196,6 +243,7 @@ int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, 
 
 	dstImage = Mat(height * sy, width * sx, CV_8UC3, Scalar(0));
 
+	//lấy affine ngược
 	AffineTransform affine;
 	affine.Scale(1.0/sx, 1.0/sy);
 
@@ -215,6 +263,7 @@ int GeometricTransformer::Resize(const Mat & srcImage, Mat & dstImage, int newWi
 
 	dstImage = Mat(newHeight, newWidth, CV_8UC3, Scalar(0));
 
+	//lấy affine ngược
 	float x = 1.0 / (1.0 * newWidth / width);
 	float y = 1.0 / (1.0 * newHeight / height);
 
