@@ -342,6 +342,33 @@ int GeometricTransformer::Resize(const Mat & srcImage, Mat & dstImage, int newWi
 	return result;
 }
 
+int GeometricTransformer::Flip(const Mat & srcImage, Mat & dstImage, bool direction, PixelInterpolate * interpolator)
+{
+	int result = 0;
+	int width = srcImage.cols;
+	int height = srcImage.rows;
+
+	AffineTransform affine;
+
+	if (direction)
+	{
+		//giảm đi 1 do duyệt từ 0
+		affine.Translate(0, height - 1);
+		affine.Scale(1, -1);
+	}
+	else
+	{
+		//giảm đi 1 do duyệt từ 0
+		affine.Translate(width - 1, 0);
+		affine.Scale(-1, 1);
+	}
+	
+	dstImage = Mat(height, width, CV_8UC3, Scalar(0));
+
+	result = Transform(srcImage, dstImage, &affine, interpolator);
+	return 0;
+}
+
 GeometricTransformer::GeometricTransformer()
 {
 }
