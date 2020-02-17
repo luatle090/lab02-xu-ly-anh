@@ -1,5 +1,4 @@
-﻿
-#include "pch.h"
+﻿#include "pch.h"
 #include "GeometricTransformer.h"
 
 int main(int argc, char* argv[])
@@ -86,7 +85,9 @@ int main(int argc, char* argv[])
 	PixelInterpolate *pixel;
 	NearestNeighborInterpolate noiSuy;
 	pixel = &noiSuy;
-	geo.Scale(sourceImage, dstImage, 2, 2, pixel);
+	geo.RotateUnkeepImage(sourceImage, dstImage, -30, pixel);
+	//geo.Scale(sourceImage, dstImage, 1.0 / 2, 1.0 /2, pixel);
+
 
 	//for (int y = 0; y < sourceImage.rows; y++)
 	//{
