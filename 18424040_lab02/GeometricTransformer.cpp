@@ -265,6 +265,44 @@ int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, 
 	return result;
 }
 
+int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
+{
+	int result = 0;
+	float deg = M_PI / 180.0;
+	int newRows, newCols;
+	AffineTransform affine;
+
+	//xoay ngược chiều kim đồng hồ
+	if (angle < 0)
+	{
+		//tìm góc alpha theo chiều ngược kim đồng hồ
+		float angleAlpha = 90 - abs(angle);
+		float dy = srcImage.cols * cos(abs(angleAlpha) * deg);
+		float dx = srcImage.cols * sin(abs(angleAlpha) * deg);
+
+
+		//lấy affine ngược
+		affine.Rotate(-angle);
+		affine.Translate(0, -dy);
+	}
+	else
+	{
+		float angle_2 = 180 - 90 - abs(angle);
+		float angleAlpha = 90 - angle_2;
+
+		float dy = srcImage.rows * cos(abs(angleAlpha) * deg);
+		float dx = srcImage.rows * sin(abs(angleAlpha) * deg);
+
+		//lấy affine ngược
+		affine.Rotate(-angle);
+		affine.Translate(-dx, 0);
+	}
+
+	dstImage = Mat(srcImage.rows, srcImage.cols, CV_8UC3, Scalar(0));
+	result = Transform(srcImage, dstImage, &affine, interpolator);
+	return result;
+}
+
 int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, float sy, PixelInterpolate * interpolator)
 {
 	int result = 0;
