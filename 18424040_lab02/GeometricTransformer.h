@@ -28,6 +28,9 @@ Lớp nội suy màu theo phương pháp song tuyến tính
 */
 class BilinearInterpolate : public PixelInterpolate
 {
+private:
+	void lookup();
+
 public:
 	uchar* Interpolate(float tx, float ty, uchar* pSrc, int srcWidthStep, int nChannels);
 	BilinearInterpolate();

@@ -120,16 +120,12 @@ AffineTransform::~AffineTransform()
 
 uchar* NearestNeighborInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
 {
-	
+	//nếu x, y là điểm pixel trong ảnh gốc thì giá trị là nó
+	//ngược lại thì giá trị sẽ đc nội suy
 	uchar result = 0;
-	int cols = tx;
-	int rows = ty;
-	pSrc = pSrc + rows * srcWidthStep + cols * nChannels;
-
-	//if (tx - (int)tx == 0 && ty - (int)ty == 0)
-	//{
-	//	result = pSrc[0];
-	//}
+	int col = tx;
+	int row = ty;
+	pSrc = pSrc + row * srcWidthStep + col * nChannels;
 	
 	return pSrc;
 }
@@ -143,9 +139,79 @@ NearestNeighborInterpolate::~NearestNeighborInterpolate()
 }
 
 
+void BilinearInterpolate::lookup()
+{
+
+}
+
 uchar* BilinearInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int srcWidthStep, int nChannels)
 {
-	return uchar();
+	//coding theo công thức wikipedia
+	uchar value[3];
+	uchar valueR1[3];
+	uchar valueR2[3];
+
+	int col = tx;
+	int row = ty;
+	pSrc = pSrc + row * srcWidthStep + col * nChannels;
+
+	float phanDuX = tx - (int)tx;
+	float phanDuY = ty - (int)ty;
+	if (phanDuX == 0 && phanDuY == 0)
+	{
+		return pSrc;
+	}
+	else 
+	{
+		//nội suy giá trị R1 và R2 trước
+		//sau đó tìm giá trị P(x, y) tức là giá trị cần nội suy
+
+		uchar* Q11 = pSrc;
+		uchar* Q21 = pSrc + nChannels;
+		uchar* Q12 = pSrc + srcWidthStep;
+		uchar* Q22 = pSrc + srcWidthStep + nChannels;
+
+		float mau = col + 1 - col;
+		float factor1, factor2;
+
+		if (mau == 0)
+		{
+			factor1 = 1;
+			factor2 = 0;
+		}
+		else
+		{
+			factor1 = (col + 1 - tx) / mau;
+			factor2 = (tx - col) / mau;
+		}
+
+		//tính giá trị R1 và R2
+		for (int k = 0; k < nChannels; k++)
+		{
+			valueR1[k] = factor1 * Q11[k] + factor2 * Q21[k];
+			valueR2[k] = factor1 * Q12[k] + factor2 * Q22[k];
+		}
+
+		float factor3, factor4;
+		if (row + 1 - row == 0)
+		{
+			factor3 = 1;
+			factor4 = 0;
+		}
+		else 
+		{
+			factor3 = (row + 1 - ty) / (row + 1 - row);
+			factor4 = (ty - row) / (row + 1 - row);
+		}
+
+		//tính giá trị cần nội suy
+		for (int k = 0; k < nChannels; k++)
+		{
+			value[k] = factor3 * valueR1[k] + factor4 * valueR2[k];
+		}
+	}
+
+	return &value[0];
 }
 
 BilinearInterpolate::BilinearInterpolate()
@@ -174,7 +240,7 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 
 	uchar* pDstData = (uchar*)afterImage.data;
 	uchar* pSrc = (uchar*)beforeImage.data;
-	uchar* p;
+	uchar* pRGB;
 	for (int row = 0; row < rows; row++, pDstData += dstWidthStep)
 	{
 		uchar* pRow = pDstData;
@@ -191,14 +257,16 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 			}
 			else
 			{
-				//nếu x, y là điểm pixel trong ảnh gốc thì giá trị là nó
-				//ngược lại thì giá trị sẽ đc nội suy
-				p = interpolator->Interpolate(x, y, pSrc, srcWidthStep, srcChannels);
+				if (x + 1 >= beforeImage.cols)
+					x = x - 1;
+				if (y + 1 >= beforeImage.rows)
+					y = y - 1;
+				pRGB = interpolator->Interpolate(x, y, pSrc, srcWidthStep, srcChannels);
 
 
-				pRow[0] = p[0];
-				pRow[1] = p[1];
-				pRow[2] = p[2];
+				pRow[0] = pRGB[0];
+				pRow[1] = pRGB[1];
+				pRow[2] = pRGB[2];
 			}	
 		}
 	}
@@ -208,6 +276,9 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
 {
 	int result = 0;
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+		return result;
+
 	float deg = M_PI / 180.0;
 	int newRows, newCols;
 	AffineTransform affine;
@@ -268,6 +339,9 @@ int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, 
 int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
 {
 	int result = 0;
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+		return result;
+
 	float deg = M_PI / 180.0;
 	int newRows, newCols;
 	AffineTransform affine;
@@ -306,6 +380,9 @@ int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage
 int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, float sy, PixelInterpolate * interpolator)
 {
 	int result = 0;
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+		return result;
+
 	int width = srcImage.cols;
 	int height = srcImage.rows;
 
@@ -345,6 +422,10 @@ int GeometricTransformer::Resize(const Mat & srcImage, Mat & dstImage, int newWi
 int GeometricTransformer::Flip(const Mat & srcImage, Mat & dstImage, bool direction, PixelInterpolate * interpolator)
 {
 	int result = 0;
+
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+		return result;
+
 	int width = srcImage.cols;
 	int height = srcImage.rows;
 

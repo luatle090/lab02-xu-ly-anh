@@ -79,14 +79,20 @@ int main(int argc, char* argv[])
 
 
 
-	Mat sourceImage = imread("E:\\Histogram_Calculation.jpg", CV_LOAD_IMAGE_COLOR);
-	Mat dstImage;
+	Mat sourceImage = imread("E:\\lena.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat dstImage, dstImage2;
 	GeometricTransformer geo;
 	PixelInterpolate *pixel;
-	NearestNeighborInterpolate noiSuy;
-	pixel = &noiSuy;
-	geo.RotateUnkeepImage(sourceImage, dstImage, -30, pixel);
-	//geo.Scale(sourceImage, dstImage, 1.0 / 2, 1.0 /2, pixel);
+	NearestNeighborInterpolate langGieng;
+	BilinearInterpolate songTuyenTinh;
+	pixel = &langGieng;
+	//geo.RotateUnkeepImage(sourceImage, dstImage, -30, pixel);
+	//geo.Flip(sourceImage, dstImage, 0, pixel);
+	//geo.Scale(sourceImage, dstImage, 4, 4, pixel);
+
+	pixel = &songTuyenTinh;
+	geo.Scale(sourceImage, dstImage2, 4, 4, pixel);
+	//geo.RotateKeepImage(sourceImage, dstImage2, -32, pixel);
 
 
 	//for (int y = 0; y < sourceImage.rows; y++)
@@ -104,7 +110,8 @@ int main(int argc, char* argv[])
 
 
 	cv::imshow("Source Image", sourceImage);
-	cv::imshow("Destination Image", dstImage);
+	//cv::imshow("Destination Image", dstImage);
+	cv::imshow("Destination Image 2", dstImage2);
 	waitKey(0);
 	return result;
 }
