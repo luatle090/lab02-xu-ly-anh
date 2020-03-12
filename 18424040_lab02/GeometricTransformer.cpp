@@ -157,6 +157,8 @@ uchar* BilinearInterpolate::Interpolate(float tx, float ty, uchar * pSrc, int sr
 
 	float phanDuX = tx - (int)tx;
 	float phanDuY = ty - (int)ty;
+
+	//giá trị tại tọa độ góc ko cần nội suy
 	if (phanDuX == 0 && phanDuY == 0)
 	{
 		return pSrc;
@@ -257,9 +259,9 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 			}
 			else
 			{
-				if (x + 1 >= beforeImage.cols)
+				if (x >= beforeImage.cols - 1)
 					x = x - 1;
-				if (y + 1 >= beforeImage.rows)
+				if (y >= beforeImage.rows - 1)
 					y = y - 1;
 				pRGB = interpolator->Interpolate(x, y, pSrc, srcWidthStep, srcChannels);
 

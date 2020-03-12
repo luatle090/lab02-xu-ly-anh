@@ -1,72 +1,121 @@
 ﻿#include "pch.h"
 #include "GeometricTransformer.h"
 
+int cStringToInt(char* str);
+
+int cStringToInt(char* str)
+{
+	int temp = 0;
+	int sign = 1;
+	if (*str == '-')
+	{
+		sign = -1;
+		str++;
+	}
+	while (*str >= '0' && *str <= '9')
+	{
+		temp *= 10;
+		temp += (int)(*str - '0');
+		str++;
+	}
+	return temp * sign;
+}
+
+
 int main(int argc, char* argv[])
 {
-	int result = 1;
-	/*if (argc < 3)
+	int result = 0;
+	if (argc < 5)
 	{
 		printf("Sai dong lenh\n");
-		printf("<Program.exe> <Command> <InputPath> <CmdArguments>");
+		printf("<Program.exe> <Command> <Interpolate> <InputPath> <CmdArguments>");
 		return result;
 	}
 
-	string inputPath = argv[2];
-	int kWidth = 3;
-	int kHeight = 3;
-	Mat sourceImage = imread(inputPath, CV_LOAD_IMAGE_GRAYSCALE);
+	string command = argv[1];
+	string interpolate = argv[2];
+	string inputPath = argv[3];
+
+
+	Mat sourceImage = imread(inputPath, CV_LOAD_IMAGE_COLOR);
 	Mat destinationImage;
+	PixelInterpolate *pixel = NULL;
 
-	if (argc == 5)
-	{
-		kWidth = cStringToInt(argv[3]);
-		kHeight = cStringToInt(argv[4]);
+	//check dòng lệnh interpolate
+	if (interpolate == "--bl") 
+	{	
+		//BilinearInterpolate songTuyenTinh;
+		pixel = new BilinearInterpolate();
 	}
-
-
-	if (string(argv[1]) == "--mean")
+	else if (interpolate == "--nn")
 	{
-		Blur blur;
-		result = blur.BlurImage(sourceImage, destinationImage, kWidth, kHeight, LOC_TRUNG_BINH);
-	}
-
-	else if (string(argv[1]) == "--median")
-	{
-		Blur blur;
-		result = blur.BlurImage(sourceImage, destinationImage, kWidth, kHeight, LOC_TRUNG_VI);
-	}
-
-	else if (string(argv[1]) == "--gauss")
-	{
-		Blur blur;
-		result = blur.BlurImage(sourceImage, destinationImage, kWidth, kHeight, LOC_GAUSS);
-	}
-
-	else if (string(argv[1]) == "--sobel")
-	{
-		EdgeDetector edgeDetector;
-		result = edgeDetector.DetectEdge(sourceImage, destinationImage, kWidth, kHeight, CANH_SOBEL);
-	}
-
-	else if (string(argv[1]) == "--prewitt")
-	{
-		EdgeDetector edgeDetector;
-		result = edgeDetector.DetectEdge(sourceImage, destinationImage, kWidth, kHeight, CANH_PREWITT);
-	}
-
-	else if (string(argv[1]) == "--laplace")
-	{
-		EdgeDetector edgeDetector;
-		result = edgeDetector.DetectEdge(sourceImage, destinationImage, kWidth, kHeight, CANH_LAPACE);
+		//NearestNeighborInterpolate langGieng;
+		pixel = new NearestNeighborInterpolate();
 	}
 
 	else
 	{
 		printf("Sai dong lenh\n");
-		printf("<Program.exe> <Command> <InputPath> <CmdArguments>");
+		printf("<Interpolate>: --bl, --nn");
 	}
 
-	if (result == 0)
+	
+	GeometricTransformer geo;
+
+	//check dòng lệnh command
+	if (command == "--zoom")
+	{
+		if (argc < 6)
+		{
+			printf("Khong xac dinh duoc he so Y\n");
+		}
+		else
+		{
+			float heSoX = stof(argv[4]);
+			float heSoY = stof(argv[5]);
+			result = geo.Scale(sourceImage, destinationImage, heSoX, heSoY, pixel);
+		}
+	}
+
+	else if (command == "--resize")
+	{
+		if (argc < 6)
+		{
+			printf("Khong xac dinh duoc new height\n");
+		}
+		else 
+		{
+			int newWidth = cStringToInt(argv[4]);
+			int newHeight = cStringToInt(argv[5]);
+			result = geo.Resize(sourceImage, destinationImage, newWidth, newHeight, pixel);
+		}
+	}
+
+	else if (command == "--rotate")
+	{
+		float heSo = stof(argv[4]);
+		result = geo.RotateKeepImage(sourceImage, destinationImage, heSo, pixel);
+	}
+
+	else if (command == "--rotateN")
+	{
+		float heSo = stof(argv[4]);
+		result = geo.RotateUnkeepImage(sourceImage, destinationImage, heSo, pixel);
+	}
+
+	else if (command == "--flip")
+	{
+		int heSo = cStringToInt(argv[4]);
+		result = geo.Flip(sourceImage, destinationImage, heSo, pixel);
+	}
+
+	else
+	{
+		printf("Sai dong lenh\n");
+		printf("<Command>: --resize, --rotateN, --flip, --rotate, --zoom");
+	}
+
+	if (result)
 	{
 		cv::imshow("Source Image", sourceImage);
 		cv::imshow("Destination Image", destinationImage);
@@ -75,43 +124,8 @@ int main(int argc, char* argv[])
 	else
 	{
 		printf("Errors");
-	}*/
+	}
 
-
-
-	Mat sourceImage = imread("E:\\lena.jpg", CV_LOAD_IMAGE_COLOR);
-	Mat dstImage, dstImage2;
-	GeometricTransformer geo;
-	PixelInterpolate *pixel;
-	NearestNeighborInterpolate langGieng;
-	BilinearInterpolate songTuyenTinh;
-	pixel = &langGieng;
-	//geo.RotateUnkeepImage(sourceImage, dstImage, -30, pixel);
-	//geo.Flip(sourceImage, dstImage, 0, pixel);
-	//geo.Scale(sourceImage, dstImage, 4, 4, pixel);
-
-	pixel = &songTuyenTinh;
-	geo.Scale(sourceImage, dstImage2, 4, 4, pixel);
-	//geo.RotateKeepImage(sourceImage, dstImage2, -32, pixel);
-
-
-	//for (int y = 0; y < sourceImage.rows; y++)
-	//{
-	//	uchar* pRow = sourceImage.ptr<uchar>(y);
-	//	for (int x = 0; x < sourceImage.cols; x++, pRow += sourceImage.channels())
-	//	{
-	//		uchar s = sourceImage.at<uchar>(y, x);//truy xuất pixel (x,y)
-	//		uchar c =pRow[0];
-	//		//pRow[1];
-	//		//pRow[2];
-	//		float sum = 0;
-	//	}
-	//}
-
-
-	cv::imshow("Source Image", sourceImage);
-	//cv::imshow("Destination Image", dstImage);
-	cv::imshow("Destination Image 2", dstImage2);
-	waitKey(0);
+	delete pixel;
 	return result;
 }
