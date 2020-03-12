@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 	if (argc < 5)
 	{
 		printf("Sai dong lenh\n");
-		printf("<Program.exe> <Command> <Interpolate> <InputPath> <CmdArguments>");
+		printf("<Program.exe> <Command> <Interpolate> <InputPath> <CmdArguments>\n");
 		return result;
 	}
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 	else
 	{
 		printf("Sai dong lenh\n");
-		printf("<Interpolate>: --bl, --nn");
+		printf("<Interpolate>: --bl, --nn\n");
 	}
 
 	
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 	else
 	{
 		printf("Sai dong lenh\n");
-		printf("<Command>: --resize, --rotateN, --flip, --rotate, --zoom");
+		printf("<Command>: --resize, --rotateN, --flip, --rotate, --zoom\n");
 	}
 
 	if (result)
@@ -126,6 +126,7 @@ int main(int argc, char* argv[])
 		printf("Errors");
 	}
 
-	delete pixel;
+	if(pixel != NULL)
+		delete pixel;
 	return result;
 }

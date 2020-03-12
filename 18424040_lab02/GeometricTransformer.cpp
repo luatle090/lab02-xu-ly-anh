@@ -20,9 +20,7 @@ Mat AffineTransform::multipleMatrix(Mat matrix1, Mat matrix2)
 			{
 				pRowResult[0] += pRowMatrix1[0] * pRowMatrix2[0];
 			}
-			printf("%f ", pRowResult[0]);
 		}
-		printf("\n");
 	}
 	return result;
 }
@@ -228,7 +226,7 @@ BilinearInterpolate::~BilinearInterpolate()
 int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, AffineTransform * transformer, PixelInterpolate * interpolator)
 {
 	
-	if (afterImage.cols <= 0 || afterImage.rows <= 0 || afterImage.data == NULL)
+	if (afterImage.cols <= 0 || afterImage.rows <= 0 || afterImage.data == NULL || interpolator == NULL)
 		return 0;
 
 	int rows = afterImage.rows;
@@ -278,7 +276,7 @@ int GeometricTransformer::Transform(const Mat & beforeImage, Mat & afterImage, A
 int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
 {
 	int result = 0;
-	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL || interpolator == NULL)
 		return result;
 
 	float deg = M_PI / 180.0;
@@ -325,7 +323,7 @@ int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, 
 
 		//tìm full rows và full cols;
 		//tính new width
-		newCols = dx + srcImage.cols * cos(angle * deg);
+		newCols = dx + srcImage.cols * abs(cos(angle * deg));
 
 		//tính new height
 		//tìm góc bên dưới
@@ -341,7 +339,7 @@ int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, 
 int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
 {
 	int result = 0;
-	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL || interpolator == NULL)
 		return result;
 
 	float deg = M_PI / 180.0;
@@ -382,7 +380,7 @@ int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage
 int GeometricTransformer::Scale(const Mat & srcImage, Mat & dstImage, float sx, float sy, PixelInterpolate * interpolator)
 {
 	int result = 0;
-	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || sx < 0 || sy < 0 || srcImage.data == NULL || interpolator == NULL)
 		return result;
 
 	int width = srcImage.cols;
@@ -402,7 +400,7 @@ int GeometricTransformer::Resize(const Mat & srcImage, Mat & dstImage, int newWi
 {
 	int result = 0;
 
-	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL || newWidth <= 0 || newHeight <= 0 || interpolator == NULL)
 		return 0;
 
 	int width = srcImage.cols;
@@ -425,7 +423,7 @@ int GeometricTransformer::Flip(const Mat & srcImage, Mat & dstImage, bool direct
 {
 	int result = 0;
 
-	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL)
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL || interpolator == NULL)
 		return result;
 
 	int width = srcImage.cols;
@@ -449,7 +447,7 @@ int GeometricTransformer::Flip(const Mat & srcImage, Mat & dstImage, bool direct
 	dstImage = Mat(height, width, CV_8UC3, Scalar(0));
 
 	result = Transform(srcImage, dstImage, &affine, interpolator);
-	return 0;
+	return result;
 }
 
 GeometricTransformer::GeometricTransformer()
