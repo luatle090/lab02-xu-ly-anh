@@ -417,7 +417,8 @@ int GeometricTransformer::RotateKeepImage(const Mat & srcImage, Mat & dstImage, 
 int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage, float angle, PixelInterpolate * interpolator)
 {
 	int result = 0;
-	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL || interpolator == NULL)
+	if (srcImage.cols <= 0 || srcImage.rows <= 0 || srcImage.data == NULL || interpolator == NULL
+		|| angle > 360 || angle < 0)
 		return result;
 
 	float deg = M_PI / 180.0;
@@ -425,21 +426,60 @@ int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage
 	AffineTransform affine;
 
 	//xoay ngược chiều kim đồng hồ
-	if (angle < 0)
+	angle = -angle;
+	if (angle >= -90)
 	{
-		//tìm góc alpha theo chiều ngược kim đồng hồ
 		float angleAlpha = 90 - abs(angle);
 		float dy = srcImage.cols * cos(abs(angleAlpha) * deg);
 		float dx = srcImage.cols * sin(abs(angleAlpha) * deg);
-
 
 		//lấy affine ngược
 		affine.Rotate(-angle);
 		affine.Translate(0, -dy);
 	}
-	else
+	else if (angle >= -180)
 	{
-		float angle_2 = 180 - 90 - abs(angle);
+		float angle_6 = abs(angle) - 90;
+		float angle_5 = 90 - angle_6;
+		float angle_4 = 90 - abs(angle_5);
+		float angleAlpha = 90 - angle_4;
+
+		float dy = srcImage.cols * sin(abs(angle_5) * deg);
+		float dx = srcImage.cols * cos(angle_5 * deg);
+
+		//tính new height
+		newRows = dy + srcImage.rows * cos(angleAlpha * deg);
+
+		dy = newRows;
+
+		//lấy affine ngược
+		affine.Rotate(-angle);
+		affine.Translate(-dx, -dy);
+	}
+	else if (angle >= -270)
+	{
+		float angle_8 = abs(angle) - 180;
+		float angle_7 = 90 - angle_8;
+		float angle_3 = 90 - angle_8;
+		float angle_2 = 90 - angle_3;
+
+		float dy = srcImage.rows * cos(angle_8 * deg);
+		float dx = srcImage.rows * sin(angle_8 * deg);
+
+		//tính new width
+		newCols = dx + srcImage.cols * abs(cos(angle_2 * deg));
+
+		dx = newCols;
+
+		//lấy affine ngược
+		affine.Rotate(-angle);
+		affine.Translate(-dx, -dy);
+	}
+	else if (angle >= -360)
+	{
+		float angle_3 = 360 + angle;
+
+		float angle_2 = 90 - angle_3;
 		float angleAlpha = 90 - angle_2;
 
 		float dy = srcImage.rows * cos(abs(angleAlpha) * deg);
@@ -449,6 +489,18 @@ int GeometricTransformer::RotateUnkeepImage(const Mat & srcImage, Mat & dstImage
 		affine.Rotate(-angle);
 		affine.Translate(-dx, 0);
 	}
+	//else
+	//{
+	//	float angle_2 = 180 - 90 - abs(angle);
+	//	float angleAlpha = 90 - angle_2;
+
+	//	float dy = srcImage.rows * cos(abs(angleAlpha) * deg);
+	//	float dx = srcImage.rows * sin(abs(angleAlpha) * deg);
+
+	//	//lấy affine ngược
+	//	affine.Rotate(-angle);
+	//	affine.Translate(-dx, 0);
+	//}
 
 	dstImage = Mat(srcImage.rows, srcImage.cols, CV_8UC3, Scalar(0));
 	result = Transform(srcImage, dstImage, &affine, interpolator);
